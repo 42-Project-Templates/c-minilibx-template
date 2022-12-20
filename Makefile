@@ -3,7 +3,19 @@ NAME := template
 INCS := include
 
 LDFLAGS :=
-LDLIBS :=
+LDLIBS := -lmlx
+
+OS = $(shell uname)
+
+ifeq ($(OS), Linux)
+	MLX_DIR := libs/minilibx-linux
+	LDFLAGS += -L$(MLX_DIR) -L/usr/bin/lib/
+	LDLIBS += -lXext -lX11 -lm
+else
+	MLX_DIR := libs/minilibx-macos
+	LDFLAGS += -L$(MLX_DIR)
+	LDLIBS += -framework OpenGL -framework AppKit
+endif
 
 SRC_DIR := src
 BUILD_DIR := .build
@@ -17,7 +29,7 @@ CC := gcc
 CFLAGS := -Wall -Werror -Wextra
 CPPFLAGS := $(addprefix -I, $(INCS)) -MMD -MP
 
-RM = rm -rf
+RM := rm -rf
 
 all: $(NAME)
 
@@ -31,6 +43,7 @@ thread: CFLAGS += -fsanitize=thread -g
 thread: re
 
 $(NAME): $(BUILD_DIR) $(OBJS)
+	@make -sC $(MLX_DIR)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(OBJS) -o $(NAME) $(LDFLAGS) $(LDLIBS)
 
 $(BUILD_DIR):
@@ -40,6 +53,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 clean:
+	@make -sC $(MLX_DIR) clean
 	$(RM) $(BUILD_DIR)
 
 fclean: clean
